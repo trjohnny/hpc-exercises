@@ -84,7 +84,7 @@
 // choice was to set HOT to 0, so the code will use the first double to sort the
 // data).
 //
-// Note that you can chnage the data structure and the ordering as you like.
+// Note that you can change the data structure and the ordering as you like.
 
 #if !defined(DATA_SIZE)
 #define DATA_SIZE 4
@@ -99,7 +99,7 @@
 #define N_dflt    10000
 #endif
 
-#define TASK_SIZE 1000
+#define TASK_SIZE 500
 
 // let's define the data_t type
 //
@@ -138,7 +138,7 @@ extern inline compare_t compare_ge;     // the compare for "greater or equal"
 verify_t  verify_partitioning;          // verification functions
 verify_t  verify_sorting;
 verify_t  show_array;
-void merge_chunks(data_t* data, int size, int num_chunks);
+void merge_chunks(data_t* data, int data_size, int num_chunks);
 
 // declare the partitioning function
 //
@@ -213,18 +213,11 @@ int main ( int argc, char **argv )
     int local_N = sendcounts[rank] / DATA_SIZE;
     local_data = (data_t*)malloc(local_N * sizeof (data_t));
 
-    //if (rank == 0)
-        //show_array(data, 0, N, 0);
-
 
     // Distribute the data to all processes
     MPI_Scatterv(data, sendcounts, displs, MPI_DOUBLE,
                  local_data, sendcounts[rank], MPI_DOUBLE,
                  0, MPI_COMM_WORLD);
-
-    if (rank == 0)
-        printf("N=%d, local_N=%d\n", N, local_N);
-
 
     #pragma omp parallel
     {
@@ -238,8 +231,6 @@ int main ( int argc, char **argv )
                 data, sendcounts, displs, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
-
-
     double tend = CPU_TIME;
 
     if (rank == 0) {
@@ -250,7 +241,7 @@ int main ( int argc, char **argv )
 
         // Verify and output results
         if (verify_sorting(data, 0, N, 0))
-            printf("%d\t%g sec\n", n_threads, tend - tstart);
+            printf("%d\t%d\t%g sec\n", N, n_threads, tend - tstart);
         else
             printf("Array is not sorted correctly\n");
 
@@ -264,13 +255,13 @@ int main ( int argc, char **argv )
     return 0;
 }
 
-void merge_chunks(data_t* data, int size, int num_chunks) {
-    int regular_chunk_size = size / num_chunks;
-    int remainder = size % num_chunks;
+void merge_chunks(data_t* data, int data_size, int num_chunks) {
+    int regular_chunk_size = data_size / num_chunks;
+    int remainder = data_size % num_chunks;
     int num_larger_chunks = remainder;
     int larger_chunk_size = regular_chunk_size + (remainder > 0 ? 1 : 0);
 
-    data_t* temp = (data_t*)malloc(size * sizeof(data_t));
+    data_t* temp = (data_t*)malloc(data_size * sizeof(data_t));
     int* chunk_start_indices = (int*)malloc(num_chunks * sizeof(int));
     int* chunk_sizes = (int*)malloc(num_chunks * sizeof(int));
 
@@ -293,7 +284,7 @@ void merge_chunks(data_t* data, int size, int num_chunks) {
             int chunk1_end = chunk1_start + chunk_sizes[chunk];
             int chunk2_start = chunk_start_indices[chunk + step];
             int chunk2_end = (chunk + 2 * step < num_chunks) ?
-                             chunk_start_indices[chunk + 2 * step] : size;
+                             chunk_start_indices[chunk + 2 * step] : data_size;
 
             i = chunk1_start;
             j = chunk2_start;
@@ -323,7 +314,7 @@ void merge_chunks(data_t* data, int size, int num_chunks) {
         }
 
         // Copy the merged data back to the original array
-        memcpy(data, temp, size * sizeof(data_t));
+        memcpy(data, temp, data_size * sizeof(data_t));
     }
 
     free(temp);
@@ -352,7 +343,6 @@ inline int partitioning( data_t *data, int start, int end, compare_t cmp_ge )
     void *pivot = (void*)&data[--end];
 
     // partition around the pivot element
-
     int pointbreak = end-1;
     for ( int i = start; i <= pointbreak; i++ )
         if( cmp_ge( (void*)&data[i], pivot ) )
@@ -368,11 +358,11 @@ inline int partitioning( data_t *data, int start, int end, compare_t cmp_ge )
 }
 
 void quicksort(data_t *data, int start, int end, compare_t cmp) {
-    //printf("thread num %d\n", omp_get_thread_num());
+
     int size = end - start;
 
     if (size <= 1) return;
-        int pivot = partitioning(data, start, end, cmp);
+    int pivot = partitioning(data, start, end, cmp);
 
     #pragma omp task shared(data) if (size > TASK_SIZE)
     quicksort(data, start, pivot, cmp);// Sort the left part up to pivot
