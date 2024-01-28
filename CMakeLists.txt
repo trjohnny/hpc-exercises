@@ -26,6 +26,6 @@ target_include_directories(QuickSort PRIVATE ${MPI_INCLUDE_PATH})
 target_link_libraries(QuickSort ${MPI_C_LIBRARIES})
 
 # Set the compiler flags and link libraries
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native ${OpenMP_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 target_link_libraries(QuickSort OpenMP::OpenMP_C)
