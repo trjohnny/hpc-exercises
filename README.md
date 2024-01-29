@@ -1,8 +1,5 @@
 # QuickSort Parallel Implementation
 
-## Overview
-This QuickSort program is an implementation of the QuickSort algorithm with parallel processing capabilities. It is designed for educational purposes as part of the exercises for the Lectures on "Foundations of High Performance Computing".
-
 ## Compilation Instructions
 
 ### For MacBook with Silicon Processor (Without MPI)
@@ -48,7 +45,7 @@ This QuickSort program is an implementation of the QuickSort algorithm with para
    ```
 
 4. **Compile the Program with mpicc**:
-    - Navigate to the directory containing the `QuickSort` program.
+    - Navigate to the root directory of this repository
     - Use `mpicc` to compile the program:
       ```
       mpicc -fopenmp -o QuickSort.x quicksort.c
@@ -64,17 +61,7 @@ This QuickSort program is an implementation of the QuickSort algorithm with para
 - Ensure that the correct GCC version is used when compiling on a MacBook with a Silicon Processor, as the default `clang` compiler might not support OpenMP.
 - For MPI compilation, the `mpicc` command is typically included with your MPI installation. Ensure that `mpicc` is in your system's PATH.
 - The number of threads specified when running the program should not exceed the number of available CPU cores for optimal performance.
-## Running the Program
-To run the program, use the following command format:
-```
-./QuickSort <length_of_array_to_be_sorted> <number_of_threads_to_spawn>
-```
-For example:
-```
-./QuickSort 10000 12
-```
 
-This command will sort an array of 10,000 elements using 12 threads.
 
 ## Design Choices
 
