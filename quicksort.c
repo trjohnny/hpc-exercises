@@ -138,7 +138,9 @@ extern inline compare_t compare_ge;     // the compare for "greater or equal"
 verify_t  verify_partitioning;          // verification functions
 verify_t  verify_sorting;
 verify_t  show_array;
-void merge_chunks(data_t* data, int data_size, int num_chunks);
+void merge_chunks_serial(data_t* data, int data_size, int num_chunks);
+void merge_chunks_parallel(data_t** data, int data_size, int rank, int size, MPI_Comm comm);
+void merge(data_t *data1, int size1, data_t *data2, int size2, data_t *merged);
 
 // declare the partitioning function
 //
@@ -226,21 +228,20 @@ int main ( int argc, char **argv )
         #pragma omp taskwait
     }
 
-    // Gather the sorted data back to the root process
-    MPI_Gatherv(local_data, sendcounts[rank], MPI_DOUBLE,
+    // Gather the sorted data back to the root process, use with merge_chunks_serial
+    /*MPI_Gatherv(local_data, sendcounts[rank], MPI_DOUBLE,
                 data, sendcounts, displs, MPI_DOUBLE,
-                0, MPI_COMM_WORLD);
+                0, MPI_COMM_WORLD);*/
 
-    double tend = CPU_TIME;
+    // Merging in parallel in a tree-way
+    merge_chunks_parallel(&local_data, local_N, rank, size, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        // Root process merges the sorted chunks
-        //show_array(data, 0, N, 0);
-        merge_chunks(data, N, size);
-        //show_array(data, 0, N, 0);
+
+        double tend = CPU_TIME;
 
         // Verify and output results
-        if (verify_sorting(data, 0, N, 0))
+        if (verify_sorting(local_data, 0, N, 0))
             printf("%d\t%d\t%g sec\n", N, n_threads, tend - tstart);
         else
             printf("Array is not sorted correctly\n");
@@ -250,12 +251,104 @@ int main ( int argc, char **argv )
 
     free(sendcounts);
     free(displs);
-    free(local_data);
     MPI_Finalize();
     return 0;
 }
 
-void merge_chunks(data_t* data, int data_size, int num_chunks) {
+void merge_chunks_parallel(data_t** data, int data_size, int rank, int size, MPI_Comm comm) {
+    int step;
+    int partner;
+    int recv_size;
+    data_t *recv_buff, *merged_buff;
+
+    // Adjust for non-power-of-two number of processes
+    int p = 1;
+    while (p * 2 <= size) {
+        p *= 2;
+    }
+    int extra = size - p;
+
+    if (rank >= p) {
+        // Send data to rank - p
+        MPI_Send(&data_size, 1, MPI_INT, rank - p, 0, comm);
+        MPI_Send(*data, data_size * DATA_SIZE, MPI_DOUBLE, rank - p, 0, comm);
+        free(*data);
+        return; // This process exits
+
+    } else if (rank < extra) {
+        // Receive data from rank + p and merge
+        MPI_Recv(&recv_size, 1, MPI_INT, rank + p, 0, comm, MPI_STATUS_IGNORE);
+        recv_buff = (data_t*) malloc(recv_size * sizeof(data_t));
+        MPI_Recv(recv_buff, recv_size * DATA_SIZE, MPI_DOUBLE, rank + p, 0, comm, MPI_STATUS_IGNORE);
+
+        merged_buff = (data_t*) malloc((data_size + recv_size) * sizeof(data_t));
+        merge(*data, data_size, recv_buff, recv_size, merged_buff);
+
+        free(*data);
+        *data = merged_buff;
+        data_size += recv_size;
+
+        free(recv_buff);
+    }
+
+    // Continue with power-of-two merging
+    for (step = 1; step < p; step *= 2) {
+        if (rank % (2 * step) == 0) {
+            partner = rank + step;
+            if (partner < p) {
+                // Receive data from partner
+                MPI_Recv(&recv_size, 1, MPI_INT, partner, 0, comm, MPI_STATUS_IGNORE);
+                recv_buff = (data_t*) malloc(recv_size * sizeof(data_t));
+                MPI_Recv(recv_buff, recv_size * DATA_SIZE, MPI_DOUBLE, partner, 0, comm, MPI_STATUS_IGNORE);
+
+                merged_buff = (data_t*) malloc((data_size + recv_size) * sizeof(data_t));
+                merge(*data, data_size, recv_buff, recv_size, merged_buff);
+
+                free(*data);
+                *data = merged_buff;
+                data_size += recv_size;
+
+                //printf("\nProcess #%d merged buffer:\n", rank);
+                //show_array(*data, 0, data_size, 0);
+
+                free(recv_buff);
+            }
+        } else if (rank % step == 0) {
+            partner = rank - step;
+            if (partner >= 0 && partner < p) {
+                MPI_Send(&data_size, 1, MPI_INT, partner, 0, comm);
+                MPI_Send(*data, data_size * DATA_SIZE, MPI_DOUBLE, partner, 0, comm);
+                break; // This process is no longer active in merging
+            }
+        }
+    }
+}
+
+void merge(data_t *data1, int size1, data_t *data2, int size2, data_t *merged) {
+    int i = 0, j = 0, k = 0;
+
+    while (i < size1 && j < size2) {
+        if (compare(&data1[i], &data2[j]) <= 0) {
+            merged[k++] = data1[i++];
+        } else {
+            merged[k++] = data2[j++];
+        }
+    }
+
+    // Copy remaining elements from data1, if any
+    while (i < size1) {
+        merged[k++] = data1[i++];
+    }
+
+    // Copy remaining elements from data2, if any
+    while (j < size2) {
+        merged[k++] = data2[j++];
+    }
+}
+
+
+
+void merge_chunks_serial(data_t* data, int data_size, int num_chunks) {
     int regular_chunk_size = data_size / num_chunks;
     int remainder = data_size % num_chunks;
     int num_larger_chunks = remainder;
