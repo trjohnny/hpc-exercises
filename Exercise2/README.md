@@ -11,7 +11,7 @@
    ```
 
 3. **Generate Makefile and Compile**:
-    - Navigate to the directory containing the `QuickSort` program.
+    - Navigate to the ``Exercise2`` directory
     - Create a build directory and navigate into it:
       ```
       mkdir build && cd build
@@ -45,7 +45,7 @@
    ```
 
 4. **Compile the Program with mpicc**:
-    - Navigate to the root directory of this repository
+    - Navigate to the ``Exercise2`` directory
     - Use `mpicc` to compile the program:
       ```
       mpicc -fopenmp -o QuickSort.x quicksort.c
