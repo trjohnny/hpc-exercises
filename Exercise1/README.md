@@ -13,12 +13,3 @@ The report presents a comprehensive evaluation of OpenMPI's broadcast and gather
 
 ## Methodology Overview
 Performance benchmarks were conducted on the ORFEO cluster using two THIN nodes, focusing on comparing the default OpenMPI implementation with selected algorithms for broadcast and gather operations. The analysis utilized the OSU Micro-Benchmarks suite, version 7.3.
-
-## Usage
-The main findings and analysis are contained within the PDF report.
-
-## Citing
-For academic or research purposes, please reference this repository or the included report as follows: Coronica, Giovanni. "Performance Analysis of OpenMPI Collective Operations on the ORFEO Cluster." High Performance Computing 2023/2024.
-
-## Contact Information
-For further inquiries or collaboration, please contact giovanni.coronica@gmail.com
