@@ -21,29 +21,29 @@ make && make install && echo "Build completed."
 cd c/mpi/collective/blocking
 
 # Run the benchmarks
-echo "Running osu_bcast benchmarks..."
+printf "\nRunning osu_bcast benchmarks..."
 
-echo "Baseline:"
+printf "\nBaseline:"
 mpirun osu_bcast -x 100 -i 1000 -f
 
-echo "Scatter AllGather Ring:"
+printf "\nScatter AllGather Ring:"
 mpirun --mca coll_tuned_use_dynamic_rules true --mca coll_tuned_bcast_algorithm 9 ./osu_bcast -x 100 -i 1000 -f
 
-echo "Pipeline:"
+printf "\nPipeline:"
 mpirun --mca coll_tuned_use_dynamic_rules true --mca coll_tuned_bcast_algorithm 3 ./osu_bcast -x 100 -i 1000 -f
 
-echo "osu_bcast benchmark runs completed."
+printf "\n\nosu_bcast benchmark runs completed.\n"
 
 
-echo "Running osu_gather benchmarks..."
+printf "\nRunning osu_gather benchmarks...\n"
 
-echo "Baseline:"
+printf "\nBaseline:"
 mpirun osu_gather -x 100 -i 1000 -f
 
-echo "Binomial:"
+printf "\nBinomial:"
 mpirun --mca coll_tuned_use_dynamic_rules true --mca coll_tuned_gather_algorithm 2 osu_gather -x 100 -i 1000 -f
 
-echo "Basin Linear:"
+printf "\nBasic Linear:"
 mpirun --mca coll_tuned_use_dynamic_rules true --mca coll_tuned_gather_algorithm 1 osu_gather -x 100 -i 1000 -f
 
-echo "osu_gather benchmark runs completed."
+printf "\n\nosu_gather benchmark runs completed."

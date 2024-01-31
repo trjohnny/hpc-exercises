@@ -5,6 +5,7 @@ This folder contains the final report and associated materials for the High Perf
 
 ## Repository Contents
 - `CORONICA_report.pdf`: The final report detailing the methodology, analysis, and findings of the performance evaluation.
+- `execute_benchmarks.sh`: A useful script to configure the benchmark suite (if not already), compile and run the tested benchmarks.
 
 ## Summary
 The report presents a comprehensive evaluation of OpenMPI's broadcast and gather operations across different algorithms, leveraging the OSU Micro-Benchmarks suite. Key findings indicate significant performance variations between algorithms, emphasizing the importance of algorithm selection based on message size and network architecture.
