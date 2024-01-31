@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# Change to the directory where your OSU Micro-Benchmarks are located
-# Update this path according to your actual OSU Micro-Benchmark directory path
 OMB_PATH="osu-micro-benchmarks-7.3"
 
 # Navigate to the OSU Micro-Benchmark folder
 cd "$OMB_PATH"
 
-# Check if the benchmarks are already configured (e.g., Makefile exists)
+# Check if the benchmarks are already configured
 if [ ! -f Makefile ]; then
     echo "Configuring the OSU Micro-Benchmarks..."
     ./configure CC=/opt/programs/openMPI/4.1.5/bin/mpicc CXX=/opt/programs/openMPI/4.1.5/bin/mpicc && echo "Configuration completed."
@@ -17,7 +15,7 @@ fi
 echo "Building the OSU Micro-Benchmarks..."
 make && make install && echo "Build completed."
 
-# Navigate to the specific benchmark directory
+# Navigate to the benchmark directory
 cd c/mpi/collective/blocking
 
 # Run the benchmarks
